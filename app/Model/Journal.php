@@ -87,21 +87,23 @@ class Journal extends AppModel {
         return $previous['Journal']['balance'];
     }
     public function updateNewBalance($date){
+        // find all of Journals which is newer than $date
         $newJournals = $this->find('all', array(
             'conditions' => array('date >= ' => $date),
             'order' => array('date' => 'asc')
         ));
+        // if there's no record, return false
         if(count($newJournals) == 0){
             $this->log('not need to update:', 'debug');
-            return;
+            return false;
         }
+        // update the balance
         for($i = 1; $i < count($newJournals); $i++){
             $journal = $newJournals[$i]['Journal'];
             $balance = $newJournals[$i-1]['Journal']['balance'] + $journal['deposit'] - $journal['payment'];
-            $this->log($journal, 'debug');
-            $this->log($balance, 'debug');
             $newJournals[$i]['Journal']['balance'] = $balance;
         }
-        $result = $this->saveAll($newJournals);
+        // return the result
+        return $this->saveAll($newJournals);
     }
 }

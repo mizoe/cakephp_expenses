@@ -55,17 +55,13 @@ class JournalsController extends AppController {
                 + $this->request->data['Journal']['deposit']
                 - $this->request->data['Journal']['payment'];
             $this->request->data['Journal']['balance'] = $newBalance;
-/*
-            $this->log('lastBalance:' . $lastBalance );
-            $this->log('newBalance:'  . $newBalance );
-            $this->log('$this->request->data[\'Journal\'][\'deposit\']:'  . $this->request->data['Journal']['deposit'] );
-            $this->log('$this->request->data[\'Journal\'][\'payment\']:'  . $this->request->data['Journal']['payment'] );
-*/
+
             $result = $this->Journal->save($this->request->data);
             if ($result) {
-                $this->log('saved. new id:' . $result['Journal']['id'] , 'debug');
+                // if the new rew record saved successfully, update the balance in all of newer records
                 $this->Journal->updateNewBalance($result['Journal']['date']);
-				$this->Flash->success(__('The journal has been saved.'));
+				
+                $this->Flash->success(__('The journal has been saved.'));
 				return $this->redirect(array('action' => 'index'));
 			} else {
 				$this->Flash->error(__('The journal could not be saved. Please, try again.'));
