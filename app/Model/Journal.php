@@ -73,6 +73,27 @@ class Journal extends AppModel {
         return $lastCreated['Journal']['balance'];
     }
     */
+    public function update($data){
+        $date = $data['Journal']['date'];
+        $requestDate = $date['year'] . '-' . $date['month'] . '-' .$date['day']
+            . ' ' . $date['hour'] . ':' . $date['min'];
+        // find the date of current journal
+        $currentJournal = $this->find('first', array(
+            'conditions' => array('Journal.id = ' => $data['Journal']['id'])
+        ));
+        $dateToUpdate = $currentJournal['Journal']['date'];
+        if(strtotime($currentJournal['Journal']['date']) > strtotime($requestDate) ){
+            $dateToUpdate = $requestDate;
+        }
+        // save only the record
+        $result = $this->save($data);
+        if($result == false){
+            return false;
+        }
+        // update all of related record
+        $result = $this->updateNewBalance($dateToUpdate);
+        return $result;
+    }
     public function getPreviousBalance($date){
         $dateString = $date['year'] . '-' . $date['month'] . '-' .$date['day']
             . ' ' . $date['hour'] . ':' . $date['min'];
@@ -86,7 +107,7 @@ class Journal extends AppModel {
         //$this->log('getPreviousBalance:' . $previous['Journal'], 'debug');
         return $previous['Journal']['balance'];
     }
-    public function updateNewBalance($date){
+    public function updateNewBalance($date, $id = null){
         // find all of Journals which is newer than $date
         $newJournals = $this->find('all', array(
             'conditions' => array('date >= ' => $date),

@@ -60,7 +60,7 @@ class JournalsController extends AppController {
             if ($result) {
                 // if the new rew record saved successfully, update the balance in all of newer records
                 $this->Journal->updateNewBalance($result['Journal']['date']);
-				
+
                 $this->Flash->success(__('The journal has been saved.'));
 				return $this->redirect(array('action' => 'index'));
 			} else {
@@ -83,7 +83,16 @@ class JournalsController extends AppController {
 			throw new NotFoundException(__('Invalid journal'));
 		}
 		if ($this->request->is(array('post', 'put'))) {
-			if ($this->Journal->save($this->request->data)) {
+		    // get the date before edit
+            $previousBalance = $this->Journal->getPreviousBalance(
+                $this->request->data['Journal']['date']
+            );
+            $newBalance = $previousBalance
+                + $this->request->data['Journal']['deposit']
+                - $this->request->data['Journal']['payment'];
+            $this->request->data['Journal']['balance'] = $newBalance;
+		    $result = $this->Journal->update($this->request->data);
+			if ($result) {
 				$this->Flash->success(__('The journal has been saved.'));
 				return $this->redirect(array('action' => 'index'));
 			} else {
@@ -109,8 +118,11 @@ class JournalsController extends AppController {
 		if (!$this->Journal->exists()) {
 			throw new NotFoundException(__('Invalid journal'));
 		}
+        //$this->log($this->Journal, 'debug');
 		$this->request->allowMethod('post', 'delete');
-		if ($this->Journal->delete()) {
+        $result = $this->Journal->delete();
+		if ($result) {
+            //$this->log($result, 'debug');
 			$this->Flash->success(__('The journal has been deleted.'));
 		} else {
 			$this->Flash->error(__('The journal could not be deleted. Please, try again.'));
