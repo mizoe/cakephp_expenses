@@ -120,9 +120,8 @@ class JournalsController extends AppController {
 		}
         //$this->log($this->Journal, 'debug');
 		$this->request->allowMethod('post', 'delete');
-        $result = $this->Journal->delete();
+        $result = $this->Journal->deleteAndUpdate($id);
 		if ($result) {
-            //$this->log($result, 'debug');
 			$this->Flash->success(__('The journal has been deleted.'));
 		} else {
 			$this->Flash->error(__('The journal could not be deleted. Please, try again.'));

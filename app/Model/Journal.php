@@ -107,7 +107,36 @@ class Journal extends AppModel {
         //$this->log('getPreviousBalance:' . $previous['Journal'], 'debug');
         return $previous['Journal']['balance'];
     }
+    public function deleteAndUpdate($id){
+        $this->log('deleteAndUpdate started. id:' . $id, 'debug');
+        $result = $this->updateNewBalance(null, $id);
+        $this->log($result, 'debug');
+        if($result == false){
+            return false;
+        }
+        $this->id = $id;
+        $result = $this->delete();
+        $this->log($result, 'debug');
+        return $result;
+    }
     public function updateNewBalance($date, $id = null){
+        $this->log('updateNewBalance started:' .  $date . ' ' . $id,'debug');
+        $balanceBeforeUpdate = 0;
+        if($id){
+            $currentJournal = $this->find('first', array(
+                'conditions' => array('Journal.id = ' => $id)
+            ));
+            // if there's no record, return false
+            if(count($currentJournal) == 0){
+                return false;
+            }
+            $date = $currentJournal['Journal']['date'];
+            $this->log($date,'debug');
+            // get balance after delete without getting previous record
+            $balanceBeforeUpdate = $currentJournal['Journal']['balance']
+                - $currentJournal['Journal']['deposit'] + $currentJournal['Journal']['payment'];
+            $this->log('$balanceBeforeUpdate:' . $balanceBeforeUpdate,'debug');
+        }
         // find all of Journals which is newer than $date
         $newJournals = $this->find('all', array(
             'conditions' => array('date >= ' => $date),
@@ -120,8 +149,11 @@ class Journal extends AppModel {
         }
         // update the balance
         for($i = 1; $i < count($newJournals); $i++){
+            if($id == null || $i != 1){
+                $balanceBeforeUpdate = $newJournals[$i-1]['Journal']['balance'];
+            }
             $journal = $newJournals[$i]['Journal'];
-            $balance = $newJournals[$i-1]['Journal']['balance'] + $journal['deposit'] - $journal['payment'];
+            $balance = $balanceBeforeUpdate + $journal['deposit'] - $journal['payment'];
             $newJournals[$i]['Journal']['balance'] = $balance;
         }
         // return the result
